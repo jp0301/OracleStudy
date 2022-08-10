@@ -18,6 +18,28 @@ from dual;
 --==>> SYS
 
 
+SELECT USER
+FROM DUAL;
+--==>> SYS
+
+
+SELECT 1+2
+FROM DUAL;
+--==>> 3
+
+
+SELECT                                      1+2
+FROM                            DUAL;
+--==>> 3
+
+
+S   ELECT 1+2
+F   ROM DUAL;
+--==>> 에러 발생
+
+
+
+
 
 
 
