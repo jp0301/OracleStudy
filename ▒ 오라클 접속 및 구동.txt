@@ -1,0 +1,725 @@
+--■■■ 오라클 접속 및 구동 ■■■--
+
+--(명령 프롬프트 상태에서...)
+
+--○ 접속된 사용자 없이 단순히 SQL 프롬프트만 띄우도록 한 것
+C:\>sqlplus/nolog
+--==>>
+/*
+SQL*Plus: Release 11.2.0.2.0 Production on 수 8월 10 10:42:23 2022
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+SQL>
+*/
+-- 『sqlplus』는  SQL을 수행하기 위해 Oracle 에서 제공하는
+-- 도구(툴, 유틸리티)이다.
+
+
+--※ 『C:\oraclexe\app\oracle\product\11.2.0\server\bin』
+--   경로에 존재하는 『sqlplus.exe』
+--   이미 이 경로가 오라클을 설치하는 과정에서 환경변수 path 에 등록되어 있으므로
+--   『C:\>sqlplus』와 같이 명령어 사용이 가능한 상태인 것이다.
+
+
+
+SQL(Structed Query Language)
+
+
+
+SQL> ipconfig
+--==>> SP2-0042: unknown command "ipconfig" - rest of line ignored.
+
+
+SQL> dir
+--==>> SP2-0042: unknown command "dir" - rest of line ignored.
+
+--※ 일반적인 도스 명령어(윈도우 명령어)를 수행할 수 없다.
+--   (즉, 수행할 수 있는 상태나 환경이 아니다.)
+
+
+SQL> show user
+--==>> USER is ""
+--> 현재 접속한 사용자 계정을 조회하는 구문
+
+
+--○ 첫 번째 관리자 계정인 『sys』로 연결을 해본다.
+--   (※ 오라클 최고 관리자 계정 : sys)
+--==>>
+/*
+C:\Users\jp030>sqlplus sys/java002$ as sysdba
+
+SQL*Plus: Release 11.2.0.2.0 Production on 수 8월 10 11:21:40 2022
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+
+SQL>
+*/
+
+
+--○ 접속한 사용자 조회
+SQL> show user
+--==>> USER is "SYS"
+
+--○ 오라클 서버 인스턴스 상태 조회(사용가능상태 여부 확인)
+--   전원의 on/off 여부 등 일반적으로 접속의 가능 여부를
+--   확인할 때 사용하는 명령
+SQL> select status from v$instance;
+--==>>
+/*
+STATUS
+------------------------
+OPEN
+
+SQL>
+*/
+--> 오라클 서버가 정상적으로 startup 되었음을 의미.
+
+
+SQL> disconnect
+--==>> Disconnected from Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+SQL>
+
+
+SQL> show user
+--==>> USER is ""
+
+
+SQL> connect sys/java002$ as sysdba
+--==>> Connected.
+
+
+SQL> show user
+--==>> USER is "SYS"
+
+
+
+SQL> disconn
+--==>> Disconnected from Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+//disconnect 를 줄여쓸 수 있음
+
+
+SQL> show user
+--==>> USER is ""
+
+
+
+SQL> sqlplus sys/java002$ as sysdba
+--==>> 에러 발생 
+--     SP2-0734: unknown command beginning "sqlplus sy..." - rest of line ignored.
+
+
+SQL> exit
+
+C:\Users\jp030>
+
+C:\Users\jp030>connect sys/java002$ as sysdba
+--==>>
+/*
+'connect'은(는) 내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는
+배치 파일이 아닙니다.
+*/
+
+
+--※ 명령 프롬프트 상태
+--   → sqlplus 계정명/패스워드 as 권한(롤)
+
+--※ SQL 프롬프트 상태
+--   → connect 계정명/패스워드 as 권한(롤)
+--      conn    계정명/패스워드 as 권한(롤)
+
+--   disconnect
+--   disconn
+
+--   hr         /   scott
+--   → lion        → tiger
+
+
+--○ 일반 사용자 계정인 hr 로 연결 시도
+C:\Users\jp030>sqlplus hr/lion
+--==>>
+/*
+SQL*Plus: Release 11.2.0.2.0 Production on 수 8월 10 11:39:43 2022
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+ERROR:
+ORA-28000: the account is locked
+
+
+Enter user-name:
+*/
+--> 일반 사용자 계정인 『hr』은 잠겨있는 상태이므로
+--  오라클 서버 접속이 불가능한 상태
+
+
+--○ sys로 연결
+C:\Users\jp030>sqlplus sys/java002$ as sysdba
+--==>>
+/*
+SQL*Plus: Release 11.2.0.2.0 Production on 수 8월 10 11:41:40 2022
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+Connected to:
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+SQL>
+*/
+
+--○ 접속된 사용자 계정 확인
+SQL> show user
+--==>> USER is "SYS"
+
+
+--○ 오라클 사용자 계정들의 상태 조회(확인) → sys로 접속한 상태...
+SQL> select username, account_status from dba_users;
+SQL> select username, account_status from dba_users;
+--==>>
+/*
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+SYS
+OPEN
+
+SYSTEM
+OPEN
+
+ANONYMOUS
+OPEN
+
+
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+APEX_PUBLIC_USER
+LOCKED
+
+FLOWS_FILES
+LOCKED
+
+APEX_040000
+LOCKED
+
+
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+OUTLN
+EXPIRED & LOCKED
+
+DIP
+EXPIRED & LOCKED
+
+ORACLE_OCM
+EXPIRED & LOCKED
+
+
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+XS$NULL
+EXPIRED & LOCKED
+
+MDSYS
+EXPIRED & LOCKED
+
+CTXSYS
+EXPIRED & LOCKED
+
+
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+DBSNMP
+EXPIRED & LOCKED
+
+XDB
+EXPIRED & LOCKED
+
+APPQOSSYS
+EXPIRED & LOCKED
+
+
+USERNAME
+------------------------------------------------------------
+ACCOUNT_STATUS
+----------------------------------------------------------------
+HR
+EXPIRED & LOCKED
+
+
+16 rows selected.
+
+SQL>
+ */
+
+
+--○ 출력되는 내용을 가독성 있게 표현하기 위해
+--   line 의 표현 범위를 재설정
+SQL> set linesize 500
+
+SQL> select username, account_status from dba_users;
+
+USERNAME              ACCOUNT_STATUS
+--------------------- ---------------------
+SYS                   OPEN
+SYSTEM                OPEN
+ANONYMOUS             OPEN
+APEX_PUBLIC_USER      LOCKED
+FLOWS_FILES           LOCKED
+APEX_040000           LOCKED
+OUTLN                 EXPIRED & LOCKED
+DIP                   EXPIRED & LOCKED
+ORACLE_OCM            EXPIRED & LOCKED
+XS$NULL               EXPIRED & LOCKED
+MDSYS                 EXPIRED & LOCKED
+
+USERNAME              ACCOUNT_STATUS
+--------------------- ---------------------
+CTXSYS                EXPIRED & LOCKED
+DBSNMP                EXPIRED & LOCKED
+XDB                   EXPIRED & LOCKED
+APPQOSSYS             EXPIRED & LOCKED
+HR                    EXPIRED & LOCKED ◀ 만료되고 & 잠겼다
+
+16 rows selected.
+
+SQL>
+
+--○ 계정 잠금 / 해제(현재 sys 로 연결된 상태...)
+
+SQL> alter user hr account unlock;
+--==>> User altered.
+
+
+--○ 잠금 해제된 사용자 계정(hr)으로 
+SQL> conn hr/lion
+--==>>
+/*
+ERROR:
+ORA-01017: invalid username/password; logon denied
+Warning: You are no longer connected to ORACLE.
+*/
+--> 사용자 계정 이름 또는 패스워드가 유효하지 않기 때문에 로그온이 거부된 상황
+
+--○ 계정 설정 변경(패스워드 설정 변경) → sys 로 접속...
+SQL> conn sys/java002$ as sysdba
+--==>> Connected.
+SQL> show user
+--==>> USER is "SYS"
+
+SQL> alter user hr identified by lion;
+--==>> User altered.
+--> hr 계정의 패스워드를 lion 으로 설정하겠다.
+
+
+--○ 다시 hr 계정으로 오라클 접속 시도
+SQL> conn hr/lion
+--==>> Connected.
+
+
+--○ 접속된 사용자 계정 확인
+SQL> show user
+--==>> USER is "HR"
+
+
+--○ 오라클 서버의 사용자 계정 상태에 대한 조회
+SQL> select username, account_status from dba_users;
+--==>>
+/*
+select username, account_status from dba_users
+                                     *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+*/
+
+--> hr 이라는 일반 사용자 계정을 통해서는
+--  dba_users 의 조회가 불가능한 상황임을 확인
+
+
+--○ host 명령어
+--   도스 명령 체계로 전환하거나
+--   라인 단위에서 도스 명령어 입력이 가능하다.
+--   유닉스 계열에서는 『host』 명령어 뿐 아니라 『!』도 사용이 가능하다.
+--   하지만, 윈도우 계열에서는 『host』 명령어만 사용기 가능하다.
+--   host 상태에서 빠져나갈 경우 『exit』 명령어를 입력한다.
+
+cmd > sqlplus > host, exit > sqlplus > exit > cmd > exit > 종료
+
+
+
+
+lusrmgr.msc -- 막혀있는 상황
+서비스를 컨트롤해서 접근하는 법
+
+윈도우 홈 버전 사용자들
+※ 실행 -> control userpasswords2 사용자계정에 접근하는 방법
+
+--※ Administrator(SIST → 윈도우 사용자 계정)가
+--   ORA_DBA(→ 윈도우 사용자 그룹)에 포함되어 있을 경우
+--   계정과 패스워드의 확인 과정을 거치지 않는 취약한 보안 정책으로 인해
+--   실무에서는 정말 특별한 경우가 아니고서는 이를 반드시 제외시키고 사용해야 한다.
+
+--==>> ORA_DBA 사용자 그룹에서 윈도우 관릴자 계정 제거~!!!
+
+--※ 제거 이후...
+--   sys 의 계정 및 패스워드가 일치하지 않으면
+--   오라클 서버에 접속할 수 없는 상태가 된다.
+
+--○ hr 사용자 계정에 sysdba 권한(롤) 부여하기 → sys 가...
+SQL> conn sys/java002$ as sysdba
+--==>> Connected.
+
+SQL> show user
+--==>> USER is "SYS"
+
+--○ 권한 부여
+SQL> grant sysdba to hr;
+--==>> Grant succeeded.
+
+--○ 확인 → hr 계정으로 접속 → as sysdba 로 연결
+SQL> conn hr/lion as sysdba
+--==>> Connected.
+
+--○ 접속한 사용자 계정 확인
+SQL> show user
+--==>> USER is "SYS"
+
+
+--○ sysdba 권한을 부여받기 이전에는 불가능했던
+--   오라클 서버에 존재하는 사용자 계정의 상태 조회
+--   (sysdba 권한을 부여받은 hr 계정으로 접속한 상태...)
+
+SQL> set linesize 300
+SQL> select username, account_status from dba_users;
+--==>>
+/*
+USERNAME                                                     ACCOUNT_STATUS
+------------------------------------------------------------ ----------------------------------------------------------------
+SYS                                                          OPEN
+SYSTEM                                                       OPEN
+ANONYMOUS                                                    OPEN
+HR                                                           OPEN
+APEX_PUBLIC_USER                                             LOCKED
+FLOWS_FILES                                                  LOCKED
+APEX_040000                                                  LOCKED
+OUTLN                                                        EXPIRED & LOCKED
+DIP                                                          EXPIRED & LOCKED
+ORACLE_OCM                                                   EXPIRED & LOCKED
+XS$NULL                                                      EXPIRED & LOCKED
+
+USERNAME                                                     ACCOUNT_STATUS
+------------------------------------------------------------ ----------------------------------------------------------------
+MDSYS                                                        EXPIRED & LOCKED
+CTXSYS                                                       EXPIRED & LOCKED
+DBSNMP                                                       EXPIRED & LOCKED
+XDB                                                          EXPIRED & LOCKED
+APPQOSSYS                                                    EXPIRED & LOCKED
+
+16 rows selected.
+
+SQL>
+*/
+--> 정상적인 조회가 가능한 상황임을 확인
+
+--○ hr 사용자 계정에 부여한 sysdba 권한 회수(박탈) → sys 가...
+
+SQL> conn sys/java002$ as sysdba
+--==>> Connected.
+
+SQL> show user
+--==>> USER is "SYS"
+
+
+--○ 권한 박탈(회수)
+SQL> revoke sysdba from hr;
+--==>> Revoke succeeded.
+
+
+--○ 확인
+
+--> 권한 박탈 후 hr은 『as sysdba』로 접속이 불가능한 상태임을 확인~!!!
+
+
+
+--※ 오라클 서버 구동 / 중지
+--            startup / shutdown [immediate]
+
+
+--○ 일반 사용자 계정 hr 로 오라클 서버 중지 명령 시도
+SQL> conn hr/lion
+--==>> Connected.
+
+SQL> show user
+--==>> USER is "HR"
+
+SQL> shutdown
+--==>> ORA-01031: insufficient privileges
+--                (권한 불충분 에러)
+--> 일반 사용자 계정으로는 오라클 서버를 중지시킬 수 없다.
+
+
+-- sys 관리자 계정으로 접속하여 오라클 서버 중지 명령 시도
+SQL> conn sys/java002$ as sysdba
+--==>> Connected.
+
+SQL> show user
+--==>> USER is "SYS"
+
+SQL> shutdown
+--==>>
+/*
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+*/
+
+--※ 오라클 서버를 시작(startup) / 중기(shutdown) 하는 명령은
+--   『as sysdba』 또는 『as sysoper』로 연결했을 때만 가능하다.
+
+
+--○ hr 일반 사용자 계정에 『sysoper』 권한 부여하기 → sys로 접속...
+
+SQL> conn sys/java002$ as sysdba
+--==>> Connected to an idle instance.
+// 쉬고 있는 것에 접속을 했다 라는뜻
+
+SQL> startup
+--==>>
+/*
+ORACLE instance started.
+
+Total System Global Area 1068937216 bytes
+Fixed Size                  2260048 bytes
+Variable Size             616563632 bytes
+Database Buffers          444596224 bytes
+Redo Buffers                5517312 bytes
+Database mounted.
+Database opened.
+*/
+
+SQL> grant sysoper to hr;
+--==>> Grant succeeded.
+
+--○ sysoper의 권한을 가진 hr 계정으로 오라클 서버 중지 명령
+SQL> conn hr/lion as sysoper
+Connected.
+
+SQL> show user
+USER is "PUBLIC" 일반사용자들을 공공으로 사용하게 하는...
+
+SQL> shutdown
+--==>>
+/*
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+*/
+
+--○ sysoper 의 권한을 가진 hr 계정으로 오라클 서버 구동 명령
+SQL> startup
+--==>>
+/*
+ORACLE instance started.
+Database mounted.
+Database opened.
+*/
+
+--○ sysoper 의 권한을 가진 hr 계정으로
+-- 오라클 서버에 존재하고 있는 사용자 계정 상태 조회
+
+SQL> select username, account_status from dba_users;
+--==>>
+/*
+select username, account_status from dba_users
+                                     *
+ERROR at line 1:
+ORA-00942: table or view does not exist
+*/
+
+--■■■ 오라클 서버 연결 모드의 3가지 방법 ■■■--
+
+-- 1. as sysdba
+--> as sysdba 로 연결하면 오라클 서버의 관리자로 연결되는 것이다.
+-- user 명은 sys 로 확인된다.
+-- 오라클 서버 관리자로 연결되는 것이기 때문에
+-- 오라클에서 제공하는 모든 기능을 전부 활용할 수 있다.
+-- 오라클 서버가 startup 또는 shutdown 되어도 연결이 가능하다.
+-- → 일반적인 연결은 『conn 계정/패스워드 as sysdba』 형태로 연결하게 된다.
+
+-- 2. as sysoper
+--> as sysoper로 연결하면 오라클 서버의 운영자로 연결되는 것이다.
+--  user 명은 PUBLIC 으로 확인된다.
+--  사용자 계정 정보 테이블에 접근하는 것은 불가능하다.
+--  오라클 서버의 구동 및 중지 명령 수행이 가능하다.
+--  오라클 서버가 startup 또는 shutdown 되어도 연결이 가능하다.
+-- → 일반적인 연결은 『conn 계정/패스워드 as sysoper』 형태로 연결하게 된다.
+
+
+-- 3. normal
+--> 오라클 서버에 존재하는 일반적인 사용자로 연결되는 것이다.
+--  오라클 서버가 구동중인 상태에서만 연결이 가능하고
+--  오라클 서버가 구동 중지 상태일 경우 연결이 불가능하다.
+--  관리자가 부여해준 권한(또는 롤)을 통해서만 사용 가능하다.
+-- → 일반적인 연결은 『conn 계정/패스워드』 형태로 연결하게 된다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
