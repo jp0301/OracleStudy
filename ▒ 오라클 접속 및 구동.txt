@@ -175,7 +175,6 @@ SQL> show user
 
 --○ 오라클 사용자 계정들의 상태 조회(확인) → sys로 접속한 상태...
 SQL> select username, account_status from dba_users;
-SQL> select username, account_status from dba_users;
 --==>>
 /*
 USERNAME
@@ -368,7 +367,7 @@ lusrmgr.msc -- 막혀있는 상황
 --   계정과 패스워드의 확인 과정을 거치지 않는 취약한 보안 정책으로 인해
 --   실무에서는 정말 특별한 경우가 아니고서는 이를 반드시 제외시키고 사용해야 한다.
 
---==>> ORA_DBA 사용자 그룹에서 윈도우 관릴자 계정 제거~!!!
+--==>> ORA_DBA 사용자 그룹에서 윈도우 관리자 계정 제거~!!!
 
 --※ 제거 이후...
 --   sys 의 계정 및 패스워드가 일치하지 않으면
