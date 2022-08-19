@@ -930,7 +930,8 @@ GROUP BY ROLLUP(DEPTNO);
 
 
 
-
+-- TBL_EMP 테이블로 조회를 하면 정상적인 결과값이 출력되지 않음
+-- 새로 추가한 데이터들의 합은 모든부서가 들어가면안됨
 SELECT NVL(TO_CHAR(DEPTNO), '모든부서') "부서번호", SUM(SAL) "급여합"
 FROM TBL_EMP
 GROUP BY ROLLUP(DEPTNO);
