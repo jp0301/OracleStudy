@@ -1,0 +1,165 @@
+
+--○ 과목 시퀀스 생성
+CREATE SEQUENCE TBL_BOOK_SEQ
+START WITH 1
+INCREMENT BY 1
+MINVALUE 1
+MAXVALUE 999
+NOCYCLE
+NOCACHE;
+--==>> Sequence TBL_BOOK_SEQ이(가) 생성되었습니다.
+
+
+--○ 교재 등록 PRC_BOOK_INSERT(교재코드, 교재명, 저자)
+CREATE OR REPLACE PROCEDURE PRC_BOOK_INSERT
+( V_BOOK_NAME   IN TBL_BOOK.BOOK_NAME%TYPE
+, V_BOOK_AUTHOR IN TBL_BOOK.BOOK_AUTHOR%TYPE
+)
+IS
+    BOOK_CHECK_NAME TBL_BOOK.BOOK_NAME%TYPE;
+    USER_DEFINE_ERROR EXCEPTION;
+BEGIN
+    -- 입력받은 책 이름이 있는지 확인하고 
+    -- BOOK_CHECK_NAME에 있으면 입력 받은 이름 그대로 넣고 없으면 0을 넣는다.
+    SELECT NVL((SELECT BOOK_NAME 
+                FROM TBL_BOOK 
+                WHERE BOOK_NAME = V_BOOK_NAME), '0') INTO BOOK_CHECK_NAME
+    FROM DUAL;
+    
+    -- 조건문으로 BOOK_CHECK_NAME에 책 이름이 들어가있으면 에러 발생
+    -- 그게 아니라면 INSERT문 진행으로 넘어간다.
+    IF (BOOK_CHECK_NAME != '0')
+        THEN RAISE USER_DEFINE_ERROR;
+    END IF;
+    
+    -- INSERT 쿼리문 수행
+    INSERT INTO TBL_BOOK(BOOK_CODE, BOOK_NAME, BOOK_AUTHOR)
+    VALUES(('BOK' || LPAD(TO_CHAR(TBL_BOOK_SEQ.NEXTVAL), 3, '0')), V_BOOK_NAME, V_BOOK_AUTHOR);
+    
+    -- 예외 처리
+    EXCEPTION
+        WHEN USER_DEFINE_ERROR
+            THEN RAISE_APPLICATION_ERROR(-20004, '이미 등록된 교재입니다.');
+            ROLLBACK;
+        --WHEN OTHERS
+            --THEN ROLLBACK;
+    -- 커밋
+    COMMIT;
+END;
+--==>> Procedure PRC_BOOK_INSERT이(가) 컴파일되었습니다.
+
+
+EXEC PRC_BOOK_INSERT('Java의 정석','남궁성');
+EXEC PRC_BOOK_INSERT('오라클','서진수');
+EXEC PRC_BOOK_INSERT('HTML+CSS+JS','고경희');
+EXEC PRC_BOOK_INSERT('JSP','최범균');
+EXEC PRC_BOOK_INSERT('스프링5','라오 카라남');
+EXEC PRC_BOOK_INSERT('파이썬','송석리');
+EXEC PRC_BOOK_INSERT('R코딩','권철민');
+EXEC PRC_BOOK_INSERT('하둡코딩','정재화');
+EXEC PRC_BOOK_INSERT('Python ML','권철민');
+
+
+
+--○ 교재 수정 PRC_BOOK_UPDATE(교재코드, 교재명, 저자)
+CREATE OR REPLACE PROCEDURE PRC_BOOK_UPDATE
+( V_BOOK_CODE   IN TBL_BOOK.BOOK_CODE%TYPE
+, V_BOOK_NAME   IN TBL_BOOK.BOOK_NAME%TYPE
+, V_BOOK_AUTHOR IN TBL_BOOK.BOOK_AUTHOR%TYPE  
+)
+IS
+    BOOK_CHECK_CODE TBL_BOOK.BOOK_CODE%TYPE;
+    BOOK_CHECK_NAME TBL_BOOK.BOOK_NAME%TYPE;
+    USER_DEFINE_ERROR EXCEPTION;
+    USER_DEFINE_ERROR2 EXCEPTION;
+BEGIN
+
+
+    -- 교재코드가 같은지 판단하기 위한 조회
+    SELECT NVL((SELECT BOOK_CODE
+                FROM TBL_BOOK
+                WHERE BOOK_CODE = V_BOOK_CODE), '0') INTO BOOK_CHECK_CODE
+    FROM DUAL;
+    
+    -- 조건 판단으로 에러발생, 코드가 없으면 예외
+    IF (BOOK_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR;
+    END IF;
+
+    -- 교재명이 같은지 판단하기 위한 조회
+    SELECT NVL((SELECT BOOK_NAME 
+                FROM TBL_BOOK 
+                WHERE BOOK_NAME = V_BOOK_NAME), '0') INTO BOOK_CHECK_NAME
+    FROM DUAL;
+    
+    -- 조건 판단으로 에러발생
+    IF (BOOK_CHECK_NAME != '0')
+        THEN RAISE USER_DEFINE_ERROR2;
+    END IF;
+
+
+    -- 업데이트 쿼리문
+    UPDATE TBL_BOOK
+    SET BOOK_NAME = V_BOOK_NAME, BOOK_AUTHOR = V_BOOK_AUTHOR
+    WHERE BOOK_CODE = V_BOOK_CODE;
+    
+    
+    EXCEPTION
+        WHEN USER_DEFINE_ERROR
+            THEN RAISE_APPLICATION_ERROR(-20801, '등록되지 않은 교재코드입니다.');
+        WHEN USER_DEFINE_ERROR2
+            THEN RAISE_APPLICATION_ERROR(-20802, '이미 등록된 교재입니다.');
+        ROLLBACK;
+    
+    -- 커밋
+    COMMIT;
+END;
+--==>> Procedure PRC_BOOK_UPDATE이(가) 컴파일되었습니다.
+
+
+
+--○ 교재 삭제 PRC_BOOK_DELETE(교재코드)
+CREATE OR REPLACE PROCEDURE PRC_BOOK_DELETE
+( V_BOOK_CODE   IN TBL_BOOK.BOOK_CODE%TYPE
+)
+IS
+    BOOK_CHECK_CODE TBL_BOOK.BOOK_CODE%TYPE;
+    
+    USER_DEFINE_ERROR EXCEPTION;
+    USER_DEFINE_ERROR2 EXCEPTION;
+BEGIN
+
+    -- 교재코드 조회
+     SELECT NVL((SELECT BOOK_CODE
+                FROM TBL_BOOK
+                WHERE BOOK_CODE = V_BOOK_CODE), '0') INTO BOOK_CHECK_CODE
+    FROM DUAL;
+    
+    -- 조건 판단으로 에러발생, 교재코드가 없으면 예외 발생
+    IF (BOOK_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR;
+    END IF;   
+    
+    
+    -- 삭제하려는 교재를 지금 사용중인 과목이 있는지 조회를 한다.
+    SELECT NVL((SELECT COUNT(BOOK_CODE)
+                FROM TBL_OPENSUB
+                WHERE BOOK_CODE = V_BOOK_CODE), '0') INTO BOOK_CHECK_CODE
+    FROM DUAL;
+    
+    IF (BOOK_CHECK_CODE != '0')
+        THEN RAISE USER_DEFINE_ERROR2;
+    END IF;
+    
+    
+    EXCEPTION
+        WHEN USER_DEFINE_ERROR
+            THEN RAISE_APPLICATION_ERROR(-20801, '등록되지 않은 교재코드입니다.');
+        WHEN USER_DEFINE_ERROR2
+            THEN RAISE_APPLICATION_ERROR(-20803, '해당 교재를 이미 사용중입니다.');
+        ROLLBACK;
+        
+    -- 커밋
+    COMMIT;
+END;
+--==>> Procedure PRC_BOOK_DELETE이(가) 컴파일되었습니다.

@@ -1,0 +1,204 @@
+
+
+
+--○ 개설과목 시퀀스 생성
+CREATE SEQUENCE TBL_OPENSUB_SEQ
+START WITH 1
+INCREMENT BY 1
+MINVALUE 1
+MAXVALUE 999
+NOCYCLE
+NOCACHE;
+--==>> Sequence TBL_SUB_SEQ이(가) 생성되었습니다.
+
+
+/*
+■■■ 개설과목등록 ■■■
+PRC_OPENSUB_INSERT
+( OPENSUB_CODE   개설과목코드 시퀀스 처리
+, OPENCOU_CODE   개설과정코드 TBL_OPENCOU
+, SUB_CODE       과목코드 TBL_SUB
+, PROF_CODE      교수코드 TBL_PROF
+, BOOK_CODE      교재코드 TBL_BOOK
+, OPENSUB_DATE   과목시작일 TBL_OPENSUB
+, OPENSUB_END    과목종료일 TBL_OPENSUB
+, OPENSUB_ATTEND 출결배점  TBL_OPENSUB
+, OPENSUB_WRITE  필기배점  TBL_OPENSUB
+, OPENSUB_PRAC   실기배점  TBL_OPENSUB
+)
+*/
+
+
+--○ 개설 과목 등록
+CREATE OR REPLACE PROCEDURE PRC_OPENSUB_INSERT
+( V_OPENCOU_CODE        IN TBL_OPENCOU.OPENCOU_CODE%TYPE
+, V_SUB_CODE            IN TBL_SUB.SUB_CODE%TYPE
+, V_PROF_CODE           IN TBL_PROF.PROF_CODE%TYPE
+, V_BOOK_CODE           IN TBL_BOOK.BOOK_CODE%TYPE
+, V_OPENSUB_START       IN TBL_OPENSUB.OPENSUB_START%TYPE
+, V_OPENSUB_END         IN TBL_OPENSUB.OPENSUB_END%TYPE
+, V_OPENSUB_ATTEND      IN TBL_OPENSUB.OPENSUB_ATTEND%TYPE
+, V_OPENSUB_WRITE       IN TBL_OPENSUB.OPENSUB_WRITE%TYPE
+, V_OPENSUB_PRAC        IN TBL_OPENSUB.OPENSUB_PRAC%TYPE
+)
+IS
+    OPENCOU_CHECK_CODE      TBL_OPENCOU.OPENCOU_CODE%TYPE;
+    SUB_CHECK_CODE      TBL_SUB.SUB_CODE%TYPE;
+    PROF_CHECK_CODE         TBL_PROF.PROF_CODE%TYPE;
+    BOOK_CHECK_CODE         TBL_BOOK.BOOK_CODE%TYPE;
+
+    V_OPENSUB_CODE TBL_OPENSUB.OPENSUB_CODE%TYPE;
+    
+    COU_START DATE; --개설 과정 시작일
+    COU_END DATE; --개설 과정 종료일
+    
+    OLD_START DATE; --기존 과목 시작일
+    OLD_END DATE; --기존 과목 종료일
+    
+    CURSOR CUR_CHECK_DATE
+    IS
+    SELECT OPENSUB_START, OPENSUB_END
+    FROM TBL_OPENSUB
+    WHERE OPENCOU_CODE = V_OPENCOU_CODE;
+    
+    
+    -- 예외 선언
+    USER_DEFINE_ERROR1 EXCEPTION;
+    USER_DEFINE_ERROR2 EXCEPTION;
+    USER_DEFINE_ERROR3 EXCEPTION;
+    USER_DEFINE_ERROR4 EXCEPTION;
+    USER_DEFINE_ERROR5 EXCEPTION;
+    USER_DEFINE_ERROR6 EXCEPTION;
+    USER_DEFINE_ERROR7 EXCEPTION;
+BEGIN
+    -- 배점의 총점이 100이 되어야 한다. 안되면 에러 발생
+    IF (V_OPENSUB_ATTEND + V_OPENSUB_WRITE + V_OPENSUB_PRAC != 100)
+        THEN RAISE USER_DEFINE_ERROR1;
+    END IF;
+    
+    -- 개설 과정 체크
+    SELECT NVL(MAX(OPENCOU_CODE), '0') INTO OPENCOU_CHECK_CODE
+    FROM TBL_OPENCOU
+    WHERE OPENCOU_CODE = V_OPENCOU_CODE;
+    
+    IF (OPENCOU_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR2;
+    END IF;
+    
+    -- 과목 여부 체크
+    SELECT NVL(MAX(SUB_CODE), '0') INTO SUB_CHECK_CODE
+    FROM TBL_SUB
+    WHERE SUB_CODE = V_SUB_CODE;
+    
+    IF (SUB_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR3;
+    END IF;
+    
+    -- 교수 여부 체크
+    SELECT NVL(MAX(PROF_CODE), '0') INTO PROF_CHECK_CODE
+    FROM TBL_PROF
+    WHERE PROF_CODE = V_PROF_CODE;
+    
+    IF (PROF_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR4;
+    END IF;
+    
+    
+    -- 교재 여부 체크
+    SELECT NVL(MAX(BOOK_CODE), '0') INTO BOOK_CHECK_CODE
+    FROM TBL_BOOK
+    WHERE BOOK_CODE = V_BOOK_CODE;
+    
+    IF (BOOK_CHECK_CODE = '0')
+        THEN RAISE USER_DEFINE_ERROR5;
+    END IF;
+    
+
+    
+    -- 과정 시작일과 종료일 가져오기
+    SELECT OPENCOU_START, OPENCOU_END INTO COU_START, COU_END
+    FROM TBL_OPENCOU
+    WHERE OPENCOU_CODE = V_OPENCOU_CODE;
+
+    -- 과목시작일자가 현재보다 과거이면 안됨
+    IF (V_OPENSUB_START < SYSDATE
+        -- 과목 시작일과 과목 종료일은 과정 시작일과 과정 종료일 사이에 있어야 함
+        OR V_OPENSUB_START NOT BETWEEN COU_START AND COU_END
+        OR V_OPENSUB_END NOT BETWEEN COU_START AND COU_END)
+        THEN RAISE USER_DEFINE_ERROR6;
+    END IF;
+    
+
+
+    -- 기존에 있는 과목들과 시작일, 종료일 범위가 겹치면 안된다.
+    -- 커서 오픈
+    OPEN CUR_CHECK_DATE;
+        LOOP
+            -- FETCH 한행한행받아서처리
+            FETCH CUR_CHECK_DATE INTO OLD_START, OLD_END;
+            
+            EXIT WHEN CUR_CHECK_DATE%NOTFOUND; --커서값 없으면 EXIT
+                      
+            -- 입력한 과목 시작일이 기존의 과목시작일 당일, 이전이고
+            -- 입력한 과목 종료일이 기존의 과목시작일 당일, 이후이면 에러 발생
+            IF (V_OPENSUB_START <= OLD_START AND V_OPENSUB_END >= OLD_START)
+                THEN RAISE USER_DEFINE_ERROR7;            
+            -- 입력한 과목 시작일이 기존의 과목시작일 당일, 이전이고
+            -- 입력한 과목 종료일이 기존의 과목종료일 당일, 이후이면 에러 발생
+            ELSIF (V_OPENSUB_START <= OLD_END AND V_OPENSUB_END >= OLD_END)
+                THEN RAISE USER_DEFINE_ERROR7;            
+            -- 입력한 과목 시작일이 기존의과목시작일 당일, 이후이고
+            -- 입력한 과목 종료일이 기존의 과목종료일 당일, 이후이면 에러 발생
+            ELSIF (V_OPENSUB_START >= OLD_START AND V_OPENSUB_END >= OLD_END)
+                THEN RAISE USER_DEFINE_ERROR7;
+            END IF;
+        END LOOP;
+        
+    CLOSE CUR_CHECK_DATE;
+        
+        
+    -- 개설과목코드 입력
+    V_OPENSUB_CODE := 'OSJ' || LPAD(TO_CHAR(TBL_OPENSUB_SEQ.NEXTVAL), 3, '0');
+    
+    -- INSERT 쿼리문
+    INSERT INTO TBL_OPENSUB(OPENSUB_CODE, OPENCOU_CODE, PROF_CODE, SUB_CODE, BOOK_CODE
+    , OPENSUB_START, OPENSUB_END, OPENSUB_ATTEND, OPENSUB_WRITE, OPENSUB_PRAC)
+    VALUES(V_OPENSUB_CODE, V_OPENCOU_CODE, V_PROF_CODE, V_SUB_CODE, V_BOOK_CODE
+    , V_OPENSUB_START, V_OPENSUB_END, V_OPENSUB_ATTEND, V_OPENSUB_WRITE, V_OPENSUB_PRAC);
+    
+    EXCEPTION
+        WHEN USER_DEFINE_ERROR1
+            THEN RAISE_APPLICATION_ERROR(-20951, '배점 총합은 100점이어야 합니다.');            
+            ROLLBACK;
+        WHEN USER_DEFINE_ERROR2
+            THEN RAISE_APPLICATION_ERROR(-20952, '개설 과정이 없습니다.');
+            ROLLBACK;
+        WHEN USER_DEFINE_ERROR3
+            THEN RAISE_APPLICATION_ERROR(-20953, '해당 과목은 없습니다.');
+            ROLLBACK;            
+        WHEN USER_DEFINE_ERROR4
+            THEN RAISE_APPLICATION_ERROR(-20954, '해당 교수는 없습니다.');
+            ROLLBACK;            
+        WHEN USER_DEFINE_ERROR5
+            THEN RAISE_APPLICATION_ERROR(-20955, '해당 교재는 없습니다.');
+            ROLLBACK;            
+        WHEN USER_DEFINE_ERROR6
+            THEN RAISE_APPLICATION_ERROR(-20956, '과목을 개설하려면 개설과정보다 이전/이후에는 개설할 수 없습니다.');
+            ROLLBACK;
+        WHEN USER_DEFINE_ERROR7
+            THEN RAISE_APPLICATION_ERROR(-20957, '입력기간 중에 진행중인 과목이 있습니다.');
+            ROLLBACK;
+    
+    -- 커밋 
+    COMMIT;
+END;
+
+
+--○ 개설과정 등록 프로시저 실행
+EXEC PRC_OPENSUB_INSERT('OPC004','SUB001','PRO001','BOK001','2022-09-10','2023-01-01','20','40','40');
+
+--OPC004	COU004	CLA004	2022-09-09	2023-01-16
+
+EXEC PRC_OPENSUB_INSERT('OPC004','SUB001','PRO001','BOK010','2022-09-10','2022-12-21','20','40','40');
+--==>> 에러발생
+-- ORA-20955: 해당 교재는 없습니다.
