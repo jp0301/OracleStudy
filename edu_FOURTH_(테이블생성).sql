@@ -1,0 +1,43 @@
+
+--○ 교재 등록 PRC_BOOK_INSERT(교재코드, 교재명, 저자)
+CREATE OR REPLACE PROCEDURE PRC_BOOK_INSERT
+( V_BOOK_CODE   IN TBL_BOOK.BOOK_CODE%TYPE
+, V_BOOK_NAME   IN TBL_BOOK.BOOK_NAME%TYPE
+, V_BOOK_AUTHOR IN TBL_BOOK.BOOK_AUTHOR%TYPE
+)
+IS
+    BOOK_CHECK_NAME TBL_BOOK.BOOK_NAME%TYPE;
+    USER_DEFINE_ERROR EXCEPTION;
+BEGIN
+    -- 입력받은 책 이름이 있는지 확인하고 
+    -- BOOK_CHECK_NAME에 있으면 입력 받은 이름 그대로 넣고 없으면 0을 넣는다.
+    SELECT NVL((SELECT BOOK_NAME 
+                FROM TBL_BOOK 
+                WHERE BOOK_NAME = 'Java의 정석'), '0') INTO BOOK_CHECK_NAME
+    FROM DUAL;
+    
+    -- 조건문으로 BOOK_CHECK_NAME에 책 이름이 들어가있으면 에러 발생
+    -- 그게 아니라면 INSERT문 진행으로 넘어간다.
+    IF (BOOK_CHECK_NAME != '0')
+        THEN RAISE USER_DEFINE_ERROR;
+    END IF;
+    
+    -- INSERT 쿼리문 수행
+    INSERT INTO TBL_BOOK(BOOK_CODE, BOOK_NAME, BOOK_AUTHOR)
+    VALUES(V_BOOK_CODE, V_BOOK_NAME, V_BOOK_AUTHOR);
+    
+    -- 예외 처리
+    EXCEPTION
+        WHEN USER_DEFINE_ERROR
+            THEN RAISE_APPLICATION_ERROR(-20004, '이미 등록된 교재입니다.');
+            ROLLBACK;
+        WHEN OTHERS
+            THEN ROLLBACK;
+    -- 커밋
+    COMMIT;
+END;
+
+
+--○ 교재 등록 PRC_BOOK_INSERT(교재코드, 교재명, 저자)
+CREATE OR REPLACE PROCEDURE PRC_BOOK_INSERT
+
