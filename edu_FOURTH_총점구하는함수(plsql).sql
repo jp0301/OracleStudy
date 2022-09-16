@@ -29,8 +29,9 @@ BEGIN
     
     
     RESULT := (V_ATTEND_PERC * V_ATTEND_SCORE + V_WRITE_PERC * V_WRITE_SCORE + V_PRAC_PERC * V_PRAC_SCORE)/100;
+    RETURN RESULT;
 END;
 --==>> Function FN_TOTAL_SCORE이(가) 컴파일되었습니다.
 
 
-
+COMMIT;
